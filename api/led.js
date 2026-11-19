@@ -103,6 +103,34 @@ module.exports = async (req, res) => {
       return res.json({ ok: true, on: sw ? !!sw.value : null, devices: IDS.length });
     }
 
+    if (b.action === "debug") {
+      const st = await tuya("GET", `/v1.0/devices/${IDS[0]}/status`, null, token);
+      const fn = {};
+      Object.keys(c).forEach((k) => (fn[k] = c[k].values));
+      return res.json({ ok: true, functions: fn, status: st.result || st });
+    }
+
+    if (b.action === "white") {
+      const n = (x) => Number(x) || 0;
+      const known = Object.keys(c).length > 0;
+      const seq = [{ code: "switch_led", value: true }];
+      if (!known || c.work_mode) seq.push({ code: "work_mode", value: "white" });
+      if (c.bright_value_v2 || !known) seq.push({ code: "bright_value_v2", value: scale(rng(c, "bright_value_v2", null, 10, 1000), n(b.v)) });
+      if (c.bright_value) seq.push({ code: "bright_value", value: scale(rng(c, "bright_value", null, 25, 255), n(b.v)) });
+      if (b.t != null) {
+        if (c.temp_value_v2 || !known) seq.push({ code: "temp_value_v2", value: scale(rng(c, "temp_value_v2", null, 0, 1000), n(b.t)) });
+        if (c.temp_value) seq.push({ code: "temp_value", value: scale(rng(c, "temp_value", null, 0, 255), n(b.t)) });
+      }
+      const warn = [];
+      for (const cmd of seq) {
+        const outs = await Promise.all(IDS.map((id) => tuya("POST", `/v1.0/devices/${id}/commands`, { commands: [cmd] }, token)));
+        const bad = outs.find((o) => !o.success);
+        if (bad) warn.push(`${cmd.code}: ${bad.msg} (${bad.code})`);
+        await new Promise((r) => setTimeout(r, 250));
+      }
+      return res.json({ ok: true, warn });
+    }
+
     const commands = build(c, b);
     if (commands === undefined) return res.status(400).json({ error: "Action inconnue" });
     if (commands === null) return res.status(501).json({ error: "unsupported" });
