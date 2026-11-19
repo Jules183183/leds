@@ -55,22 +55,31 @@ module.exports = async (req, res) => {
   }
 
   let commands;
+  let codes = {};
+  try {
+    const token0 = await getToken();
+    const f = await tuya("GET", `/v1.0/devices/${TUYA_DEVICE_ID}/functions`, null, token0);
+    ((f.result && f.result.functions) || []).forEach((x) => (codes[x.code] = x));
+  } catch (e) {}
+  const has = (c) => !!codes[c];
+
   if (action === "ping") {
     return res.json({ ok: true });
   } else if (action === "power") {
     commands = [{ code: "switch_led", value: !!value }];
   } else if (action === "color") {
-    commands = [
-      { code: "switch_led", value: true },
-      { code: "work_mode", value: "colour" },
-      { code: "colour_data_v2", value: { h: clamp(h, 0, 360), s: clamp(s, 0, 100) * 10, v: clamp(v, 1, 100) * 10 } },
-    ];
+    commands = [{ code: "switch_led", value: true }];
+    if (has("work_mode") || !Object.keys(codes).length) commands.push({ code: "work_mode", value: "colour" });
+    if (has("colour_data")) {
+      commands.push({ code: "colour_data", value: { h: clamp(h, 0, 360), s: Math.round(clamp(s, 0, 100) * 2.55), v: Math.round(clamp(v, 1, 100) * 2.55) } });
+    } else {
+      commands.push({ code: "colour_data_v2", value: { h: clamp(h, 0, 360), s: clamp(s, 0, 100) * 10, v: clamp(v, 1, 100) * 10 } });
+    }
   } else if (action === "white") {
-    commands = [
-      { code: "switch_led", value: true },
-      { code: "work_mode", value: "white" },
-      { code: "bright_value_v2", value: clamp(v, 1, 100) * 10 },
-    ];
+    commands = [{ code: "switch_led", value: true }];
+    if (has("work_mode") || !Object.keys(codes).length) commands.push({ code: "work_mode", value: "white" });
+    if (has("bright_value")) commands.push({ code: "bright_value", value: Math.max(25, Math.round(clamp(v, 1, 100) * 2.55)) });
+    else commands.push({ code: "bright_value_v2", value: Math.max(10, clamp(v, 1, 100) * 10) });
   } else {
     return res.status(400).json({ error: "Action inconnue" });
   }
@@ -78,7 +87,7 @@ module.exports = async (req, res) => {
   try {
     const token = await getToken();
     const out = await tuya("POST", `/v1.0/devices/${TUYA_DEVICE_ID}/commands`, { commands }, token);
-    if (!out.success) return res.status(502).json({ error: out.msg || "Erreur Tuya", code: out.code });
+    if (!out.success) return res.status(502).json({ error: (out.msg || "Erreur Tuya") + " (" + (out.code || "?") + ") codes: " + Object.keys(codes).join(","), code: out.code });
     return res.json({ ok: true });
   } catch (e) {
     return res.status(500).json({ error: e.message });
