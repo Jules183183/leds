@@ -111,6 +111,8 @@ nav .seg{width:100%;max-width:412px;background:#1c1a24;border:1px solid var(--li
       </div>
       <button data-t="0">Annuler le minuteur</button>
       <p class="hint" id="timerinfo"></p>
+      <button id="diag">Diagnostic du bandeau</button>
+      <pre id="diagout" class="hint" style="white-space:pre-wrap;word-break:break-all;margin:0"></pre>
       <button id="logout">Se déconnecter</button>
     </section>
   </div>
@@ -146,14 +148,13 @@ async function call(p){
     const r=await fetch("/api/led",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pw,...p})});
     const j=await r.json();
     if(!r.ok){if(j.error!=="unsupported")$("msg").textContent=j.error||"Erreur";return{err:j.error||"Erreur"}}
-    $("msg").textContent="";return j;
+    $("msg").textContent=(j.warn&&j.warn.length)?"Blanc : "+j.warn.join(" | "):"";return j;
   }catch(e){$("msg").textContent="Réseau indisponible";return{err:"net"}}
 }
 function push(p){pending=p;if(!busy)pump()}
 async function pump(){busy=true;while(pending){const p=pending;pending=null;await call(p)}busy=false}
-function whiteHS(){return T<=50?{h:35,s:Math.round(60*(50-T)/50)}:{h:215,s:Math.round(35*(T-50)/50)}}
 function sendCurrent(){
-  if(mode==="white"){const w=whiteHS();push({action:"color",h:w.h,s:w.s,v:V})}
+  if(mode==="white")push({action:"white",v:V,t:T});
   else push({action:"color",h:H,s:S,v:V})
 }
 function setHSV(h,s,v,stop=true){if(stop)stopFx();mode="color";setMode();H=h;S=s;if(v!=null){V=v;$("br").value=V;$("brv").textContent=V+"%"}on=true;paint();sendCurrent()}
@@ -266,6 +267,7 @@ async function login(){
   }
 }
 $("enter").onclick=login;$("pw").onkeydown=e=>{if(e.key==="Enter")login()};
+$("diag").onclick=async()=>{$("diagout").textContent="…";const r=await call({action:"debug"});$("diagout").textContent=JSON.stringify(r,null,1)};
 $("logout").onclick=()=>{sessionStorage.removeItem("pw");location.reload()};
 if(pw)login();
 </script>
