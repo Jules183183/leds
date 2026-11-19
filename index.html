@@ -151,7 +151,11 @@ async function call(p){
 }
 function push(p){pending=p;if(!busy)pump()}
 async function pump(){busy=true;while(pending){const p=pending;pending=null;await call(p)}busy=false}
-function sendCurrent(){push(mode==="white"?{action:"white",v:V,t:T}:{action:"color",h:H,s:S,v:V})}
+function whiteHS(){return T<=50?{h:35,s:Math.round(60*(50-T)/50)}:{h:215,s:Math.round(35*(T-50)/50)}}
+function sendCurrent(){
+  if(mode==="white"){const w=whiteHS();push({action:"color",h:w.h,s:w.s,v:V})}
+  else push({action:"color",h:H,s:S,v:V})
+}
 function setHSV(h,s,v,stop=true){if(stop)stopFx();mode="color";setMode();H=h;S=s;if(v!=null){V=v;$("br").value=V;$("brv").textContent=V+"%"}on=true;paint();sendCurrent()}
 
 /* ---------- roue ---------- */
