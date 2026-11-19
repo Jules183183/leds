@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="LEDs">
+<meta name="theme-color" content="#14111c">
+<title>LEDs</title>
+<style>
+:root{--bg:#14111c;--panel:#1f1b2b;--text:#f3effa;--muted:#9a93ad;--glow:#ff3d81}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--text);font:17px/1.4 -apple-system,system-ui,sans-serif;
+padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));
+display:flex;justify-content:center}
+main{width:100%;max-width:420px;display:flex;flex-direction:column;gap:20px}
+.strip{height:14px;border-radius:7px;background:var(--glow);box-shadow:0 0 28px 6px var(--glow);transition:background .3s,box-shadow .3s,opacity .3s}
+.strip.off{opacity:.15;box-shadow:none}
+h1{margin:6px 0 0;font-size:28px;font-weight:700}
+.panel{background:var(--panel);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:16px}
+input[type=password]{width:100%;padding:14px;border-radius:12px;border:1px solid #3a3450;background:#14111c;color:var(--text);font-size:17px}
+button{font:inherit;border:0;border-radius:12px;padding:14px;background:#3a3450;color:var(--text);cursor:pointer}
+button.main{background:var(--glow);color:#fff;font-weight:600}
+button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.swatches button{aspect-ratio:1;padding:0;border-radius:50%;border:2px solid transparent}
+.swatches button:focus-visible{border-color:#fff}
+label{color:var(--muted);font-size:14px;display:flex;justify-content:space-between}
+input[type=range]{width:100%;accent-color:var(--glow)}
+input[type=color]{width:100%;height:48px;border:0;border-radius:12px;background:none;padding:0}
+#msg{min-height:20px;font-size:14px;color:var(--muted);text-align:center}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<main>
+  <div class="strip off" id="strip"></div>
+  <h1>Mes LEDs</h1>
+
+  <section class="panel" id="login">
+    <input type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password">
+    <button class="main" id="enter">Entrer</button>
+  </section>
+
+  <section class="panel hidden" id="ctrl">
+    <div class="row">
+      <button class="main" id="on">Allumer</button>
+      <button id="off">Éteindre</button>
+    </div>
+    <div class="swatches" id="sw"></div>
+    <input type="color" id="pick" value="#ff3d81" aria-label="Choisir une couleur">
+    <div>
+      <label for="br"><span>Luminosité</span><span id="brv">80%</span></label>
+      <input type="range" id="br" min="1" max="100" value="80">
+    </div>
+    <button id="white">Blanc</button>
+  </section>
+
+  <div id="msg" role="status"></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const COLORS = ["#ff2d2d","#ff8a1f","#ffe11f","#2dff6b","#1fd5ff","#a64dff"];
+let pw = sessionStorage.getItem("pw") || "", hex = "#ff3d81";
+
+function hexToHsv(h){
+  const r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255;
+  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let H=0;
+  if(d){H=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;H=(H*60+360)%360}
+  return {h:Math.round(H),s:Math.round(mx?d/mx*100:0)};
+}
+function glow(c){document.documentElement.style.setProperty("--glow",c)}
+
+async function send(payload){
+  $("msg").textContent="…";
+  try{
+    const r=await fetch("/api/led",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pw,...payload})});
+    const j=await r.json();
+    if(!r.ok) throw new Error(j.error||"Erreur");
+    $("msg").textContent=""; return true;
+  }catch(e){$("msg").textContent=e.message; return false}
+}
+function setColor(c){
+  hex=c;$("pick").value=c;glow(c);$("strip").classList.remove("off");
+  const {h,s}=hexToHsv(c);
+  send({action:"color",h,s:Math.max(s,1),v:+$("br").value});
+}
+
+COLORS.forEach(c=>{
+  const b=document.createElement("button");b.style.background=c;b.setAttribute("aria-label","Couleur "+c);
+  b.onclick=()=>setColor(c);$("sw").appendChild(b);
+});
+$("pick").onchange=e=>setColor(e.target.value);
+$("on").onclick=()=>{$("strip").classList.remove("off");send({action:"power",value:true})};
+$("off").onclick=()=>{$("strip").classList.add("off");send({action:"power",value:false})};
+$("white").onclick=()=>{glow("#fff4e0");$("strip").classList.remove("off");send({action:"white",v:+$("br").value})};
+let t;$("br").oninput=e=>{
+  $("brv").textContent=e.target.value+"%";clearTimeout(t);
+  t=setTimeout(()=>setColor(hex),250);
+};
+
+async function login(){
+  pw=$("pw").value||pw;
+  if(await send({action:"ping"})){
+    sessionStorage.setItem("pw",pw);
+    $("login").classList.add("hidden");$("ctrl").classList.remove("hidden");
+  }
+}
+$("enter").onclick=login;
+$("pw").onkeydown=e=>{if(e.key==="Enter")login()};
+if(pw) login();
+</script>
+</body>
+</html>
