@@ -5,113 +5,265 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="LEDs">
-<meta name="theme-color" content="#14111c">
+<meta name="theme-color" content="#0d0c11">
 <title>LEDs</title>
 <style>
-:root{--bg:#14111c;--panel:#1f1b2b;--text:#f3effa;--muted:#9a93ad;--glow:#ff3d81}
+:root{--bg:#0d0c11;--panel:#191720;--line:#2a2733;--text:#f4f1f8;--muted:#8d879b;--glow:#ff3d81;--halo:rgba(255,61,129,.4)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;min-height:100%}
-body{background:var(--bg);color:var(--text);font:17px/1.4 -apple-system,system-ui,sans-serif;
-padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom));
-display:flex;justify-content:center}
-main{width:100%;max-width:420px;display:flex;flex-direction:column;gap:20px}
-.strip{height:14px;border-radius:7px;background:var(--glow);box-shadow:0 0 28px 6px var(--glow);transition:background .3s,box-shadow .3s,opacity .3s}
-.strip.off{opacity:.15;box-shadow:none}
-h1{margin:6px 0 0;font-size:28px;font-weight:700}
-.panel{background:var(--panel);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:16px}
-input[type=password]{width:100%;padding:14px;border-radius:12px;border:1px solid #3a3450;background:#14111c;color:var(--text);font-size:17px}
-button{font:inherit;border:0;border-radius:12px;padding:14px;background:#3a3450;color:var(--text);cursor:pointer}
-button.main{background:var(--glow);color:#fff;font-weight:600}
+body{background:var(--bg);color:var(--text);font:16px/1.4 ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+display:flex;justify-content:center;overscroll-behavior:none}
+body::before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse 120% 55% at 50% -8%,var(--halo),transparent 70%);transition:background .4s;pointer-events:none}
+main{position:relative;width:100%;max-width:440px;padding:max(18px,env(safe-area-inset-top)) 18px calc(96px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:18px}
+header{display:flex;justify-content:space-between;align-items:center}
+h1{margin:0;font-size:26px;font-weight:700}
+#state{font-size:14px;color:var(--muted)}
+.hidden{display:none!important}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:14px}
+h2{margin:0;font-size:15px;font-weight:600;color:var(--muted)}
+button{font:inherit;color:var(--text);background:#262331;border:0;border-radius:14px;padding:13px;cursor:pointer}
+button:active{transform:scale(.97)}
 button:focus-visible,input:focus-visible{outline:3px solid #fff;outline-offset:2px}
-.row{display:flex;gap:10px}.row>*{flex:1}
-.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
-.swatches button{aspect-ratio:1;padding:0;border-radius:50%;border:2px solid transparent}
-.swatches button:focus-visible{border-color:#fff}
-label{color:var(--muted);font-size:14px;display:flex;justify-content:space-between}
-input[type=range]{width:100%;accent-color:var(--glow)}
-input[type=color]{width:100%;height:48px;border:0;border-radius:12px;background:none;padding:0}
-#msg{min-height:20px;font-size:14px;color:var(--muted);text-align:center}
-.hidden{display:none}
+input[type=password]{width:100%;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--bg);color:var(--text);font:inherit}
+.power{display:flex;align-items:center;justify-content:space-between;gap:14px}
+#pw-btn{flex:none;width:76px;height:76px;border-radius:50%;padding:0;font-weight:700;background:#262331;transition:.3s}
+#pw-btn.on{background:var(--glow);color:#111;box-shadow:0 0 34px 6px var(--halo)}
+.slider{flex:1;display:flex;flex-direction:column;gap:6px}
+label{display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
+input[type=range]{width:100%;height:32px;accent-color:var(--glow);margin:0}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;background:var(--bg);border-radius:14px;padding:4px;gap:4px}
+.seg button{background:none;padding:10px}
+.seg button.act{background:#2f2b3b;font-weight:600}
+#wheel{position:relative;width:100%;aspect-ratio:1;border-radius:50%;touch-action:none;cursor:crosshair;
+background:radial-gradient(circle closest-side,#fff,rgba(255,255,255,0)),conic-gradient(#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);
+box-shadow:0 0 0 1px var(--line),0 14px 40px -10px var(--halo)}
+#dot{position:absolute;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:4px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.5);pointer-events:none}
+#temp{accent-color:#ffd9a0;background:linear-gradient(90deg,#ff9f45,#fff,#9cc8ff);height:10px;border-radius:5px;-webkit-appearance:none;appearance:none}
+#temp::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid #333}
+.fav{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.chip{width:42px;height:42px;border-radius:50%;padding:0;position:relative;border:2px solid rgba(255,255,255,.15)}
+.chip i{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:#000;font:12px/20px sans-serif;font-style:normal;text-align:center;color:#fff}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:12px;border:1px solid var(--line);background:var(--panel);text-align:left}
+.tile b{width:100%;height:34px;border-radius:9px}
+.tile.run{border-color:var(--glow);box-shadow:0 0 18px -4px var(--halo)}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:center;padding:10px 14px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(transparent,var(--bg) 35%)}
+nav .seg{width:100%;max-width:412px;background:#1c1a24;border:1px solid var(--line)}
+#msg{min-height:18px;font-size:13px;color:#ff9aa8;text-align:center;word-break:break-word}
+.hint{font-size:13px;color:var(--muted);margin:0}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <main>
-  <div class="strip off" id="strip"></div>
-  <h1>Mes LEDs</h1>
+  <header><h1>Mes LEDs</h1><span id="state"></span></header>
 
   <section class="panel" id="login">
     <input type="password" id="pw" placeholder="Mot de passe" autocomplete="current-password">
-    <button class="main" id="enter">Entrer</button>
+    <button id="enter" style="background:var(--glow);color:#111;font-weight:700">Entrer</button>
   </section>
 
-  <section class="panel hidden" id="ctrl">
-    <div class="row">
-      <button class="main" id="on">Allumer</button>
-      <button id="off">Éteindre</button>
-    </div>
-    <div class="swatches" id="sw"></div>
-    <input type="color" id="pick" value="#ff3d81" aria-label="Choisir une couleur">
-    <div>
-      <label for="br"><span>Luminosité</span><span id="brv">80%</span></label>
-      <input type="range" id="br" min="1" max="100" value="80">
-    </div>
-    <button id="white">Blanc</button>
-  </section>
+  <div id="app" class="hidden" style="display:flex;flex-direction:column;gap:18px">
+    <section class="panel">
+      <div class="power">
+        <button id="pw-btn" aria-label="Allumer ou éteindre">Off</button>
+        <div class="slider">
+          <label for="br"><span>Luminosité</span><span id="brv">80%</span></label>
+          <input type="range" id="br" min="1" max="100" value="80">
+        </div>
+      </div>
+    </section>
 
+    <!-- COULEURS -->
+    <section data-p="color" class="panel">
+      <div class="seg" id="mode"><button class="act" data-m="color">Couleur</button><button data-m="white">Blanc</button></div>
+      <div id="wheelbox"><div id="wheel"><div id="dot"></div></div></div>
+      <div id="whitebox" class="hidden">
+        <label for="temp"><span>Chaud</span><span>Froid</span></label>
+        <input type="range" id="temp" min="0" max="100" value="30">
+      </div>
+      <h2>Favoris</h2>
+      <div class="fav" id="fav"></div>
+      <button id="savefav">Enregistrer cette couleur</button>
+    </section>
+
+    <!-- AMBIANCES -->
+    <section data-p="scenes" class="hidden">
+      <div class="grid" id="scenes"></div>
+    </section>
+
+    <!-- EFFETS -->
+    <section data-p="fx" class="hidden panel">
+      <div class="grid" id="fxs" style="gap:10px"></div>
+      <div class="slider">
+        <label for="spd"><span>Vitesse</span><span id="spdv">3</span></label>
+        <input type="range" id="spd" min="1" max="5" value="3">
+      </div>
+      <button id="fxstop">Arrêter l’effet</button>
+      <p class="hint">Les effets tournent tant que cette page reste ouverte. L’écran reste allumé pendant l’effet.</p>
+    </section>
+
+    <!-- PLUS -->
+    <section data-p="more" class="hidden panel">
+      <h2>Minuteur d’extinction</h2>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr)">
+        <button data-t="15">15 min</button><button data-t="30">30 min</button><button data-t="60">1 h</button><button data-t="120">2 h</button>
+      </div>
+      <button data-t="0">Annuler le minuteur</button>
+      <p class="hint" id="timerinfo"></p>
+      <button id="logout">Se déconnecter</button>
+    </section>
+  </div>
   <div id="msg" role="status"></div>
 </main>
 
+<nav class="hidden" id="tabs"><div class="seg">
+  <button class="act" data-tab="color">Couleurs</button><button data-tab="scenes">Ambiances</button><button data-tab="fx">Effets</button><button data-tab="more">Plus</button>
+</div></nav>
+
 <script>
-const $ = (id) => document.getElementById(id);
-const COLORS = ["#ff2d2d","#ff8a1f","#ffe11f","#2dff6b","#1fd5ff","#a64dff"];
-let pw = sessionStorage.getItem("pw") || "", hex = "#ff3d81";
+const $=id=>document.getElementById(id);
+let pw=sessionStorage.getItem("pw")||"",H=330,S=85,V=80,T=30,on=false,mode="color",fxId=0,localTimer=null,wake=null;
 
-function hexToHsv(h){
-  const r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255;
-  const mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn;let H=0;
-  if(d){H=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;H=(H*60+360)%360}
-  return {h:Math.round(H),s:Math.round(mx?d/mx*100:0)};
+/* ---------- couleurs ---------- */
+function rgb(h,s,v){s/=100;v/=100;const f=n=>{const k=(n+h/60)%6;return v-v*s*Math.max(0,Math.min(k,4-k,1))};return[f(5),f(3),f(1)].map(x=>Math.round(x*255))}
+function paint(){
+  const [r,g,b]=mode==="white"?[255,230,200]:rgb(H,S,100);
+  const root=document.documentElement.style;
+  root.setProperty("--glow",`rgb(${r},${g},${b})`);
+  root.setProperty("--halo",`rgba(${r},${g},${b},${on?.15+V/100*.35:.06})`);
+  $("pw-btn").classList.toggle("on",on);$("pw-btn").textContent=on?"On":"Off";
+  $("state").textContent=on?"Allumé":"Éteint";
+  const a=H*Math.PI/180,d=S/2;
+  $("dot").style.left=50+d*Math.sin(a)+"%";$("dot").style.top=50-d*Math.cos(a)+"%";
+  $("dot").style.background=`rgb(${rgb(H,S,100)})`;
 }
-function glow(c){document.documentElement.style.setProperty("--glow",c)}
 
-async function send(payload){
-  $("msg").textContent="…";
+/* ---------- envoi (file : toujours la dernière commande) ---------- */
+let busy=false,pending=null;
+async function call(p){
   try{
-    const r=await fetch("/api/led",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pw,...payload})});
+    const r=await fetch("/api/led",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:pw,...p})});
     const j=await r.json();
-    if(!r.ok) throw new Error(j.error||"Erreur");
-    $("msg").textContent=""; return true;
-  }catch(e){$("msg").textContent=e.message; return false}
+    if(!r.ok){if(j.error!=="unsupported")$("msg").textContent=j.error||"Erreur";return{err:j.error||"Erreur"}}
+    $("msg").textContent="";return j;
+  }catch(e){$("msg").textContent="Réseau indisponible";return{err:"net"}}
 }
-function setColor(c){
-  hex=c;$("pick").value=c;glow(c);$("strip").classList.remove("off");
-  const {h,s}=hexToHsv(c);
-  send({action:"color",h,s:Math.max(s,1),v:+$("br").value});
-}
+function push(p){pending=p;if(!busy)pump()}
+async function pump(){busy=true;while(pending){const p=pending;pending=null;await call(p)}busy=false}
+function sendCurrent(){push(mode==="white"?{action:"white",v:V,t:T}:{action:"color",h:H,s:S,v:V})}
+function setHSV(h,s,v,stop=true){if(stop)stopFx();mode="color";setMode();H=h;S=s;if(v!=null){V=v;$("br").value=V;$("brv").textContent=V+"%"}on=true;paint();sendCurrent()}
 
-COLORS.forEach(c=>{
-  const b=document.createElement("button");b.style.background=c;b.setAttribute("aria-label","Couleur "+c);
-  b.onclick=()=>setColor(c);$("sw").appendChild(b);
+/* ---------- roue ---------- */
+const wheel=$("wheel");
+function fromEvent(e){
+  const r=wheel.getBoundingClientRect(),R=r.width/2,dx=e.clientX-r.left-R,dy=e.clientY-r.top-R;
+  const deg=(Math.atan2(dx,-dy)*180/Math.PI+360)%360;
+  setHSV(Math.round(deg),Math.round(Math.min(1,Math.hypot(dx,dy)/R)*100),null);
+}
+wheel.onpointerdown=e=>{wheel.setPointerCapture(e.pointerId);fromEvent(e)};
+wheel.onpointermove=e=>{if(wheel.hasPointerCapture(e.pointerId))fromEvent(e)};
+
+/* ---------- contrôles ---------- */
+$("pw-btn").onclick=()=>{stopFx();on=!on;paint();push({action:"power",value:on})};
+let bt;$("br").oninput=e=>{V=+e.target.value;$("brv").textContent=V+"%";if(!on)on=true;paint();clearTimeout(bt);bt=setTimeout(()=>{stopFx();sendCurrent()},120)};
+$("temp").oninput=e=>{T=+e.target.value;stopFx();on=true;paint();sendCurrent()};
+function setMode(){
+  document.querySelectorAll("#mode button").forEach(b=>b.classList.toggle("act",b.dataset.m===mode));
+  $("wheelbox").classList.toggle("hidden",mode==="white");$("whitebox").classList.toggle("hidden",mode!=="white");
+}
+document.querySelectorAll("#mode button").forEach(b=>b.onclick=()=>{stopFx();mode=b.dataset.m;setMode();on=true;paint();sendCurrent()});
+
+/* ---------- favoris ---------- */
+let favs=[];try{favs=JSON.parse(localStorage.getItem("fav")||"[]")}catch(e){}
+function saveFavs(){try{localStorage.setItem("fav",JSON.stringify(favs))}catch(e){}renderFavs()}
+function renderFavs(){
+  const box=$("fav");box.innerHTML="";
+  if(!favs.length){box.innerHTML='<p class="hint">Aucun favori pour l’instant.</p>';return}
+  favs.forEach((f,i)=>{
+    const b=document.createElement("button");b.className="chip";b.style.background=`rgb(${rgb(f.h,f.s,100)})`;b.setAttribute("aria-label","Appliquer ce favori");
+    b.onclick=()=>setHSV(f.h,f.s,f.v);
+    const x=document.createElement("i");x.textContent="×";x.onclick=e=>{e.stopPropagation();favs.splice(i,1);saveFavs()};
+    b.appendChild(x);box.appendChild(b);
+  });
+}
+$("savefav").onclick=()=>{if(favs.length<12){favs.push({h:H,s:S,v:V});saveFavs()}else $("msg").textContent="12 favoris maximum"};
+
+/* ---------- ambiances ---------- */
+const SCENES=[
+ {n:"Détente",h:30,s:85,v:55},{n:"Coucher de soleil",h:14,s:100,v:70},{n:"Cinéma",h:260,s:90,v:25},{n:"Nuit",h:20,s:100,v:6},
+ {n:"Romantique",h:330,s:90,v:45},{n:"Océan",h:195,s:100,v:70},{n:"Forêt",h:130,s:90,v:60},{n:"Fête",h:290,s:100,v:100},
+ {n:"Lecture",w:1,t:15,v:70},{n:"Concentration",w:1,t:85,v:100}
+];
+SCENES.forEach(sc=>{
+  const b=document.createElement("button");b.className="tile";
+  const col=sc.w?(sc.t>50?"#cfe3ff":"#ffd9a8"):`rgb(${rgb(sc.h,sc.s,100)})`;
+  b.innerHTML=`<b style="background:${col};opacity:${.35+(sc.v||70)/160}"></b>${sc.n}`;
+  b.onclick=()=>{stopFx();if(sc.w){mode="white";T=sc.t;$("temp").value=T;V=sc.v;$("br").value=V;$("brv").textContent=V+"%";setMode();on=true;paint();sendCurrent()}else setHSV(sc.h,sc.s,sc.v)};
+  $("scenes").appendChild(b);
 });
-$("pick").onchange=e=>setColor(e.target.value);
-$("on").onclick=()=>{$("strip").classList.remove("off");send({action:"power",value:true})};
-$("off").onclick=()=>{$("strip").classList.add("off");send({action:"power",value:false})};
-$("white").onclick=()=>{glow("#fff4e0");$("strip").classList.remove("off");send({action:"white",v:+$("br").value})};
-let t;$("br").oninput=e=>{
-  $("brv").textContent=e.target.value+"%";clearTimeout(t);
-  t=setTimeout(()=>setColor(hex),250);
-};
 
-async function login(){
-  pw=$("pw").value||pw;
-  if(await send({action:"ping"})){
-    sessionStorage.setItem("pw",pw);
-    $("login").classList.add("hidden");$("ctrl").classList.remove("hidden");
+/* ---------- effets ---------- */
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const FX={
+ "Arc-en-ciel":{c:["#f00","#ff0","#0f0","#0ff","#00f","#f0f"],f:(i)=>({h:(i*30)%360,s:100,v:V})},
+ "Respiration":{c:["#fff","#555"],f:(i)=>({h:H,s:S,v:Math.max(4,Math.round(V*(.55+.45*Math.cos(i*Math.PI/6))))})},
+ "Feu":{c:["#f40","#f90"],f:()=>({h:4+Math.random()*28,s:100,v:Math.round(V*(.55+Math.random()*.45))}),k:.35},
+ "Aurore":{c:["#3f8","#48f","#a4f"],f:()=>({h:pick([140,170,200,250,280]),s:80+Math.random()*20,v:V}),k:1.6},
+ "Coucher de soleil":{c:["#fa0","#f40","#c26"],f:(i)=>({h:[45,28,12,350,320,350,12,28][i%8],s:100,v:V}),k:1.4},
+ "Fête":{c:["#f0f","#0ff","#ff0"],f:()=>({h:Math.random()*360,s:100,v:V}),k:.5}
+};
+Object.entries(FX).forEach(([name,fx])=>{
+  const b=document.createElement("button");b.className="tile";b.dataset.fx=name;
+  b.innerHTML=`<b style="background:linear-gradient(90deg,${fx.c.join(",")})"></b>${name}`;
+  b.onclick=()=>startFx(name);$("fxs").appendChild(b);
+});
+async function startFx(name){
+  stopFx();const id=++fxId;mode="color";setMode();on=true;
+  document.querySelectorAll("[data-fx]").forEach(t=>t.classList.toggle("run",t.dataset.fx===name));
+  try{wake=await navigator.wakeLock.request("screen")}catch(e){}
+  const fx=FX[name];let i=0;
+  while(id===fxId){
+    const c=fx.f(i++);H=Math.round(c.h);S=Math.round(c.s);paint();
+    await call({action:"color",h:H,s:S,v:c.v});
+    const base=(4800-(+$("spd").value-1)*950)*(fx.k||1);
+    await sleep(Math.max(500,base));
   }
 }
-$("enter").onclick=login;
-$("pw").onkeydown=e=>{if(e.key==="Enter")login()};
-if(pw) login();
+function stopFx(){fxId++;document.querySelectorAll("[data-fx]").forEach(t=>t.classList.remove("run"));if(wake){try{wake.release()}catch(e){}wake=null}}
+$("fxstop").onclick=stopFx;
+$("spd").oninput=e=>$("spdv").textContent=e.target.value;
+
+/* ---------- minuteur ---------- */
+document.querySelectorAll("[data-t]").forEach(b=>b.onclick=async()=>{
+  const min=+b.dataset.t;clearTimeout(localTimer);
+  const r=await call({action:"timer",seconds:min*60});
+  if(r.err&&r.err==="unsupported"){
+    if(min){localTimer=setTimeout(()=>{stopFx();on=false;paint();push({action:"power",value:false})},min*60000);
+      $("timerinfo").textContent=`Extinction dans ${min} min (garde cette page ouverte).`}
+    else $("timerinfo").textContent="Minuteur annulé.";
+  }else if(!r.err)$("timerinfo").textContent=min?`Le bandeau s’éteindra dans ${min} min, même page fermée.`:"Minuteur annulé.";
+});
+
+/* ---------- onglets, connexion ---------- */
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("act",x===b));
+  document.querySelectorAll("[data-p]").forEach(p=>p.classList.toggle("hidden",p.dataset.p!==b.dataset.tab));
+});
+async function login(){
+  pw=$("pw").value||pw;
+  const r=await call({action:"ping"});
+  if(r.ok){
+    sessionStorage.setItem("pw",pw);
+    if(r.on!=null)on=r.on;
+    $("login").classList.add("hidden");$("app").classList.remove("hidden");$("tabs").classList.remove("hidden");
+    paint();renderFavs();
+  }
+}
+$("enter").onclick=login;$("pw").onkeydown=e=>{if(e.key==="Enter")login()};
+$("logout").onclick=()=>{sessionStorage.removeItem("pw");location.reload()};
+if(pw)login();
 </script>
 </body>
 </html>
